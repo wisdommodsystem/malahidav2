@@ -53,7 +53,7 @@ const CategorySchema: Schema = new Schema(
 // Generate slug before saving
 CategorySchema.pre('save', function (next) {
   if (this.isModified('name') && !this.slug) {
-    this.slug = this.name.toLowerCase().replace(/\s+/g, '-');
+    this.slug = (this.name as string).toLowerCase().replace(/\s+/g, '-');
   }
   next();
 });
