@@ -3,7 +3,7 @@ import mongoose, { Schema, Document } from 'mongoose';
 export interface IVideo extends Document {
   title: string;
   youtubeUrl: string;
-  youtubeId: string;
+  youtubeId?: string;
   description?: string;
   category: string;
   thumbnail?: string;
@@ -11,7 +11,7 @@ export interface IVideo extends Document {
   updatedAt: Date;
 }
 
-const VideoSchema: Schema = new Schema(
+const VideoSchema: Schema<IVideo> = new Schema(
   {
     title: {
       type: String,
@@ -48,18 +48,18 @@ const VideoSchema: Schema = new Schema(
   }
 );
 
-// Extract YouTube ID from URL before saving (only if not already set)
-VideoSchema.pre('save', function (next) {
-  // Only extract if youtubeId is not already set
+// ✅ حل المشكل هنا — تحديد نوع `this`
+VideoSchema.pre<IVideo>('save', function (next) {
   if (!this.youtubeId && this.youtubeUrl) {
-    // Improved regex to match various YouTube URL formats
-    const youtubeIdRegex = /(?:youtube\.com\/(?:[^\/]+\/.+\/|(?:v|e(?:mbed)?)\/|.*[?&]v=)|youtu\.be\/)([^"&?\/\s]{11})/;
-    const match = (this.youtubeUrl as string).match(youtubeIdRegex);
+    const youtubeIdRegex =
+      /(?:youtube\.com\/(?:[^\/]+\/.+\/|(?:v|e(?:mbed)?)\/|.*[?&]v=)|youtu\.be\/)([^"&?\/\s]{11})/;
+    const match = this.youtubeUrl.match(youtubeIdRegex);
+
     if (match && match[1]) {
       this.youtubeId = match[1];
       this.thumbnail = `https://img.youtube.com/vi/${match[1]}/maxresdefault.jpg`;
     } else {
-      // If regex fails, try to extract from URL directly
+      // Try fallback extraction
       const urlParts = this.youtubeUrl.split(/[?&]/);
       for (const part of urlParts) {
         if (part.startsWith('v=')) {
@@ -79,10 +79,9 @@ VideoSchema.pre('save', function (next) {
 // Index for faster queries
 VideoSchema.index({ category: 1, createdAt: -1 });
 
-// Delete the model if it exists to avoid cache issues
+// Delete the model if it exists (for hot reloads)
 if (mongoose.models.Video) {
   delete mongoose.models.Video;
 }
 
 export default mongoose.model<IVideo>('Video', VideoSchema);
-
