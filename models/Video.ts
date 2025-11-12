@@ -54,7 +54,7 @@ VideoSchema.pre('save', function (next) {
   if (!this.youtubeId && this.youtubeUrl) {
     // Improved regex to match various YouTube URL formats
     const youtubeIdRegex = /(?:youtube\.com\/(?:[^\/]+\/.+\/|(?:v|e(?:mbed)?)\/|.*[?&]v=)|youtu\.be\/)([^"&?\/\s]{11})/;
-    const match = this.youtubeUrl.match(youtubeIdRegex);
+    const match = (this.youtubeUrl as string).match(youtubeIdRegex);
     if (match && match[1]) {
       this.youtubeId = match[1];
       this.thumbnail = `https://img.youtube.com/vi/${match[1]}/maxresdefault.jpg`;
